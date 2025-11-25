@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { Wand2, Image as ImageIcon, AlertCircle, Zap, Upload, X } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Wand2, Image as ImageIcon, AlertCircle, Zap, Upload, X, Key } from 'lucide-react';
 import { ArtStyle, AspectRatio } from './types';
 import { generateImage } from './services/geminiService';
 import { LoadingOverlay } from './components/LoadingOverlay';
@@ -14,6 +14,14 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [apiKeyMissing, setApiKeyMissing] = useState(false);
+
+  useEffect(() => {
+    // Check if API key is injected by Vite
+    if (!process.env.API_KEY) {
+      setApiKeyMissing(true);
+    }
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -33,6 +41,11 @@ const App: React.FC = () => {
   };
 
   const handleGenerate = useCallback(async () => {
+    if (apiKeyMissing) {
+      setError("API Key is missing. Please configure it in Github Codespaces secrets.");
+      return;
+    }
+
     if (!prompt.trim()) {
       setError(sourceImage ? "Please enter instructions for editing the image." : "Please enter a description for your image.");
       return;
@@ -50,7 +63,7 @@ const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [prompt, style, aspectRatio, sourceImage]);
+  }, [prompt, style, aspectRatio, sourceImage, apiKeyMissing]);
 
   const handleDownload = () => {
     if (imageUrl) {
@@ -84,6 +97,23 @@ const App: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+        
+        {/* API Key Warning Banner */}
+        {apiKeyMissing && (
+          <div className="mb-8 bg-red-500/10 border border-red-500/40 rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="p-3 bg-red-500/20 rounded-full shrink-0">
+              <Key className="w-6 h-6 text-red-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-red-200 mb-1">Missing API Key</h3>
+              <p className="text-red-300/80 text-sm leading-relaxed">
+                The application cannot connect to Gemini because the <code>API_KEY</code> environment variable is missing. 
+                Please add it to your <b>Codespaces Secrets</b> and restart the codespace.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           
           {/* Controls Section */}
@@ -201,10 +231,10 @@ const App: React.FC = () => {
                 {/* Generate Button */}
                 <button
                   onClick={handleGenerate}
-                  disabled={loading || !prompt.trim()}
+                  disabled={loading || !prompt.trim() || apiKeyMissing}
                   className={`
                     w-full py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-[0.98]
-                    ${loading || !prompt.trim()
+                    ${loading || !prompt.trim() || apiKeyMissing
                       ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white hover:shadow-orange-500/25 hover:from-yellow-400 hover:to-orange-500'}
                   `}
