@@ -24,6 +24,8 @@ const App: React.FC = () => {
       };
       reader.readAsDataURL(file);
     }
+    // Reset the input so the same file can be selected again if needed
+    e.target.value = '';
   };
 
   const handleClearImage = () => {

@@ -16,15 +16,19 @@ export const generateImage = async (
     if (sourceImage) {
       // sourceImage is a data URL (e.g., "data:image/png;base64,...")
       // We need to extract the mimeType and the base64 data
-      const [header, base64Data] = sourceImage.split(',');
-      const mimeType = header.match(/:(.*?);/)?.[1] || 'image/png';
+      const matches = sourceImage.match(/^data:(.+);base64,(.+)$/);
+      
+      if (matches && matches.length === 3) {
+        const mimeType = matches[1];
+        const base64Data = matches[2];
 
-      parts.push({
-        inlineData: {
-          mimeType: mimeType,
-          data: base64Data,
-        },
-      });
+        parts.push({
+          inlineData: {
+            mimeType: mimeType,
+            data: base64Data,
+          },
+        });
+      }
     }
 
     // Construct a rich prompt by combining the user's input with the selected style
