@@ -1,8 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { AspectRatio } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const generateImage = async (
   prompt: string,
   style: string,
@@ -10,6 +8,9 @@ export const generateImage = async (
   sourceImage?: string | null
 ): Promise<string> => {
   try {
+    // Initialize the client inside the function to avoid app crash on load if key is missing
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
     const parts: any[] = [];
 
     // If a source image is provided, add it to the content parts
